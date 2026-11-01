@@ -57,6 +57,21 @@ app.get("/studio/:id", async (req, res) => {
     res.send(result);
 })
 
+
+// update studio data  with PATCH method with API : http://localhost:8000/studio/:id
+
+app.patch("/studio/:id", async (req, res) => {
+    const {id} = req.params;
+    const data = req.body;
+    const result = await studioCollection.updateOne(
+        {_id: new ObjectId(id)},
+         {$set: data}
+        );
+    res.send(result);
+})
+
+
+
 // http://localhost:8000 backend Base Url
 
 app.listen(PORT, () => {
