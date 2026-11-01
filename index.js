@@ -1,15 +1,17 @@
 import express from "express";
+import cors from "cors";
 import { MongoClient } from 'mongodb';
 import 'dotenv/config'
 
 const app = express();
 const PORT = 8000;
 
+app.use(cors());
+app.use(express.json());
+
 app.get("/", (req, res) => {
   res.send("Server is running fine!");
 });
-
-
 
 
 
@@ -25,9 +27,24 @@ export async function connectToMongoDB() {
   }
 }
 
-connectToMongoDB()
+const mongoClient = await connectToMongoDB();
+const db = mongoClient.db("studiospace");
+const studioCollection = db.collection("studio");
 
-// http://localhost:8000
+
+// add-studio api create  API : http://localhost:8000/add-studio
+
+app.post("/add-studio", async (req, res) => {
+    const data = req.body;
+    const result = await studioCollection.insertOne(data);
+    console.log(result);
+    res.send(result);
+})
+
+
+
+
+// http://localhost:8000 backend Base Url
 
 app.listen(PORT, () => {
   console.log(`Server is running at ${PORT}`);
