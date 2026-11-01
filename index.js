@@ -70,6 +70,13 @@ app.patch("/studio/:id", async (req, res) => {
     res.send(result);
 })
 
+// Delete studio functionality with DELETE method with API : http://localhost:8000/studio/:id
+
+app.delete("/studio/:id", async (req, res) => {
+    const {id} = req.params;
+    const result = await studioCollection.deleteOne({_id: new ObjectId(id)});
+    res.send(result);
+})
 
 
 // http://localhost:8000 backend Base Url
