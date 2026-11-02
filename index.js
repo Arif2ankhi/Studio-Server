@@ -135,9 +135,12 @@ app.patch("/bookings/:id/cancel", async (req, res) => {
   res.send(result);
 });
 
-// -------------------------------------------------------------------
-// SERVER START
-// -------------------------------------------------------------------
+
+// feature section
+app.get('/featured-studios', async (req, res) => {
+  const result = await studioCollection.find().limit(6).toArray()
+  res.send(result)
+})
 
 
 // http://localhost:8000 backend Base Url
