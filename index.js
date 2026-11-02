@@ -87,10 +87,7 @@ app.post("/booking", async (req, res) => {
 
 })
 
-// // New routes for listing and bookings  from line 82++
-// // NEW ROUTE 1: MY STUDIO LISTINGS (Filtered by Owner Email)
-// // API: GET http://localhost:8000/my-studios?email=user@email.com
-// // -------------------------------------------------------------------
+// New routes for listing and bookings 
 
 app.get("/my-studios", async (req, res) => {
   const { email } = req.query;
@@ -100,9 +97,7 @@ app.get("/my-studios", async (req, res) => {
   res.send(result);
 });
 
-// -------------------------------------------------------------------
-// NEW ROUTE 2: BOOKING SYSTEM & MY BOOKINGS
-// -------------------------------------------------------------------
+
 
 // Create New Booking API : POST http://localhost:8000/bookings
 app.post("/bookings", async (req, res) => {
@@ -136,12 +131,24 @@ app.patch("/bookings/:id/cancel", async (req, res) => {
 });
 
 
-// feature section
-app.get('/featured-studios', async (req, res) => {
-  const result = await studioCollection.find().limit(6).toArray()
-  res.send(result)
-})
 
+
+// Express Backend Endpoint
+app.get('/featured-studios', async (req, res) => {
+  try {
+    // Sort by _id descending (-1) to fetch the 6 newest listings automatically
+    const result = await studioCollection
+      .find()
+      .sort({ _id: -1 }) // Or sort by { rate: -1 } for highest price/premium spaces
+      .limit(6)
+      .toArray();
+      
+    res.send(result);
+  } catch (error) {
+    console.error("Error fetching featured studios:", error);
+    res.status(500).send({ message: "Failed to fetch featured studios" });
+  }
+});
 
 // http://localhost:8000 backend Base Url
 
