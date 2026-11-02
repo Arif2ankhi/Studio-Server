@@ -14,7 +14,6 @@ app.get("/", (req, res) => {
 });
 
 
-
 const client = new MongoClient(process.env.MONGODB_URI);
 
 export async function connectToMongoDB() {
@@ -30,6 +29,7 @@ export async function connectToMongoDB() {
 const mongoClient = await connectToMongoDB();
 const db = mongoClient.db("studiospace");
 const studioCollection = db.collection("studio");
+const bookingCollection = db.collection("bookings");
 
 
 // add-studio api create  API : http://localhost:8000/add-studio
@@ -77,6 +77,67 @@ app.delete("/studio/:id", async (req, res) => {
     const result = await studioCollection.deleteOne({_id: new ObjectId(id)});
     res.send(result);
 })
+
+// Booking api for my booking page with API : http://localhost:8000/booking
+
+app.post("/booking", async (req, res) => {
+    const data = req.body;
+    const result = await bookingCollection.insertOne(data);
+    res.send(result);
+
+})
+
+// // New routes for listing and bookings  from line 82++
+// // NEW ROUTE 1: MY STUDIO LISTINGS (Filtered by Owner Email)
+// // API: GET http://localhost:8000/my-studios?email=user@email.com
+// // -------------------------------------------------------------------
+
+app.get("/my-studios", async (req, res) => {
+  const { email } = req.query;
+  const result = await studioCollection
+    .find({ "hostInfo.email": email })
+    .toArray();
+  res.send(result);
+});
+
+// -------------------------------------------------------------------
+// NEW ROUTE 2: BOOKING SYSTEM & MY BOOKINGS
+// -------------------------------------------------------------------
+
+// Create New Booking API : POST http://localhost:8000/bookings
+app.post("/bookings", async (req, res) => {
+  const bookingData = {
+    ...req.body,
+    status: "Pending", // Default status as per requirements
+    createdAt: new Date(),
+  };
+  const result = await bookingCollection.insertOne(bookingData);
+  res.send(result);
+});
+
+// Get User Bookings API : GET http://localhost:8000/my-bookings?email=user@email.com
+app.get("/my-bookings", async (req, res) => {
+  const { email } = req.query;
+  const result = await bookingCollection
+    .find({ userEmail: email })
+    .sort({ createdAt: -1 })
+    .toArray();
+  res.send(result);
+});
+
+// Cancel Booking API : PATCH http://localhost:8000/bookings/:id/cancel
+app.patch("/bookings/:id/cancel", async (req, res) => {
+  const { id } = req.params;
+  const result = await bookingCollection.updateOne(
+    { _id: new ObjectId(id) },
+    { $set: { status: "Cancelled" } }
+  );
+  res.send(result);
+});
+
+// -------------------------------------------------------------------
+// SERVER START
+// -------------------------------------------------------------------
 
 
 // http://localhost:8000 backend Base Url
