@@ -2,6 +2,9 @@ import express from "express";
 import cors from "cors";
 import { MongoClient, ObjectId } from "mongodb";
 import "dotenv/config";
+import { createRemoteJWKSet } from "jose";
+import { jwtVerify } from "jose";;
+
 
 const app = express();
 const PORT = 8000;
@@ -30,6 +33,38 @@ const db = mongoClient.db("studiospace");
 const studioCollection = db.collection("studio");
 const bookingCollection = db.collection("bookings");
 
+// Middleware JWT TOKEN 
+
+
+
+const verifyToken = async(req, res, next) => {
+  const authHeader = req.headers.authorization;
+  console.log(authHeader);
+  if(!authHeader) {
+    return res.status(401).send({ msg: "Unauthorised" });
+  }
+     const token = authHeader.split(" ")[1]
+    //  console.log(token);
+
+if(!token){
+  return res.status(401).send({ msg: "Unauthorised" });
+}
+
+const JWKS = createRemoteJWKSet( new URL('http://localhost:3000/api/auth/jwks'))
+
+try{
+  const {payload} = await jwtVerify (token, JWKS)
+  // console.log(payload);
+   next();
+
+}
+catch(error){
+  return res.status(401).send({ msg: "Server Error!" });
+  
+}
+
+};
+
 // add-studio api create  API : http://localhost:8000/add-studio
 
 app.post("/add-studio", async (req, res) => {
@@ -48,15 +83,17 @@ app.get("/studios", async (req, res) => {
 
 // Studio details Api : http://localhost:8000/studio/:id
 
-app.get("/studio/:id", async (req, res) => {
+app.get("/studio/:id", verifyToken, async (req, res) => {
+
   const { id } = req.params;
   const result = await studioCollection.findOne({ _id: new ObjectId(id) });
   res.send(result);
 });
 
-// update studio data  with PATCH method with API : http://localhost:8000/studio/:id
+// update studio data  with PATCH method with API :
+//  http://localhost:8000/studio/:id
 
-app.patch("/studio/:id", async (req, res) => {
+app.patch("/studio/:id", verifyToken,  async (req, res) => {
   const { id } = req.params;
   const data = req.body;
   const result = await studioCollection.updateOne(
@@ -68,7 +105,8 @@ app.patch("/studio/:id", async (req, res) => {
 
 // Delete studio functionality with DELETE method with API : http://localhost:8000/studio/:id
 
-app.delete("/studio/:id", async (req, res) => {
+app.delete("/studio/:id", verifyToken, async (req, res) => {
+
   const { id } = req.params;
   const result = await studioCollection.deleteOne({ _id: new ObjectId(id) });
   res.send(result);
@@ -84,7 +122,7 @@ app.post("/booking", async (req, res) => {
 
 // New routes for listing and bookings
 
-app.get("/my-studios", async (req, res) => {
+app.get("/my-studios", verifyToken, async (req, res) => {
   const { email } = req.query;
   const result = await studioCollection
     .find({ "hostInfo.email": email })
@@ -93,6 +131,7 @@ app.get("/my-studios", async (req, res) => {
 });
 
 // Create New Booking API : POST http://localhost:8000/bookings
+
 app.post("/bookings", async (req, res) => {
   const bookingData = {
     ...req.body,
@@ -104,7 +143,8 @@ app.post("/bookings", async (req, res) => {
 });
 
 // Get User Bookings API : GET http://localhost:8000/my-bookings?email=user@email.com
-app.get("/my-bookings", async (req, res) => {
+
+app.get("/my-bookings", verifyToken, async (req, res) => {
   const { email } = req.query;
   const result = await bookingCollection
     .find({ userEmail: email })
@@ -114,7 +154,9 @@ app.get("/my-bookings", async (req, res) => {
 });
 
 // Cancel Booking API : PATCH http://localhost:8000/bookings/:id/cancel
-app.patch("/bookings/:id/cancel", async (req, res) => {
+
+
+app.patch("/bookings/:id/cancel", verifyToken, async (req, res) => {
   const { id } = req.params;
   const result = await bookingCollection.updateOne(
     { _id: new ObjectId(id) },
@@ -124,6 +166,7 @@ app.patch("/bookings/:id/cancel", async (req, res) => {
 });
 
 // Express Backend Endpoint
+
 app.get("/featured-studios", async (req, res) => {
   try {
     // Sort by _id descending (-1) to fetch the 6 newest listings automatically
